@@ -39,3 +39,4 @@ build.log
 javadoc
 apidocs
 
+.DS_Store
