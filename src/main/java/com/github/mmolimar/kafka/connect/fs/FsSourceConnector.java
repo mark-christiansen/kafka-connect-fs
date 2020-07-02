@@ -1,5 +1,6 @@
 package com.github.mmolimar.kafka.connect.fs;
 
+import com.github.mmolimar.kafka.connect.fs.guidewire.ManifestPoller;
 import com.github.mmolimar.kafka.connect.fs.util.Version;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;

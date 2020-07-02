@@ -32,6 +32,16 @@ public class FsSourceTaskConfig extends FsSourceConnectorConfig {
     public static final int POLL_INTERVAL_MS_DEFAULT = 10000;
     private static final String POLL_INTERVAL_MS_DISPLAY = "Poll Interval (ms)";
 
+    public static final String MANIFEST_POLL_ENABLED = "manifest.poll.enabled";
+    private static final String MANIFEST_POLL_ENABLED_DOC = "Polling enabled for reading Guidewire manifest data.";
+    public static final boolean MANIFEST_POLL_ENABLED_DEFAULT = false;
+    private static final String MANIFEST_POLL_ENABLED_DISPLAY = "Guidewire manifest polling enabled";
+
+    public static final String MANIFEST_POLL_INTERVAL_MS = "manifest.poll.interval.ms";
+    private static final String MANIFEST_POLL_INTERVAL_MS_DOC = "Poll interval for reading Guidewire manifest data.";
+    public static final int MANIFEST_POLL_INTERVAL_MS_DEFAULT = 30000;
+    private static final String MANIFEST_POLL_INTERVAL_MS_DISPLAY = "Guidewire manifest polling interval (ms)";
+
     private static final String POLICY_GROUP = "Policy";
     private static final String CONNECTOR_GROUP = "Connector";
 
@@ -96,6 +106,26 @@ public class FsSourceTaskConfig extends FsSourceConnectorConfig {
                         ++order,
                         ConfigDef.Width.SHORT,
                         POLL_INTERVAL_MS_DISPLAY
+                ).define(
+                        MANIFEST_POLL_ENABLED,
+                        ConfigDef.Type.BOOLEAN,
+                        MANIFEST_POLL_ENABLED_DEFAULT,
+                        ConfigDef.Importance.MEDIUM,
+                        MANIFEST_POLL_ENABLED_DOC,
+                        CONNECTOR_GROUP,
+                        ++order,
+                        ConfigDef.Width.MEDIUM,
+                        MANIFEST_POLL_ENABLED_DISPLAY
+                ).define(
+                        MANIFEST_POLL_INTERVAL_MS,
+                        ConfigDef.Type.INT,
+                        MANIFEST_POLL_INTERVAL_MS_DEFAULT,
+                        ConfigDef.Importance.MEDIUM,
+                        MANIFEST_POLL_INTERVAL_MS_DOC,
+                        CONNECTOR_GROUP,
+                        ++order,
+                        ConfigDef.Width.MEDIUM,
+                        MANIFEST_POLL_INTERVAL_MS_DISPLAY
                 );
     }
 }

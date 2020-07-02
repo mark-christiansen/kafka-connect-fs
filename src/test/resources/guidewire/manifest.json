@@ -1,0 +1,18 @@
+{
+  "pc_account": {
+    "lastSuccessfulWriteTimestamp": "1592558219702",
+    "totalProcessedRecordsCount": 0,
+    "dataFilesPath": "s3a://wnins-kafka-001/pc_account",
+    "schemaHistory": {
+      "47b969968c13406b9289c30375e620bb": "1592558219702"
+    }
+  },
+  "other": {
+    "lastSuccessfulWriteTimestamp": "1592558219702",
+    "totalProcessedRecordsCount": 0,
+    "dataFilesPath": "s3a://wnins-kafka-001/other",
+    "schemaHistory": {
+      "47b969968c13406b9289c30375e620bb": "1592558219702"
+    }
+  }
+}
