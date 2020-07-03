@@ -30,6 +30,7 @@
         <maven-coveralls-plugin.version>4.3.0</maven-coveralls-plugin.version>
         <maven-surfire-plugin.version>3.0.0-M4</maven-surfire-plugin.version>
         <maven-kafka-connect-plugin.version>0.11.3</maven-kafka-connect-plugin.version>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
 
     <dependencies>

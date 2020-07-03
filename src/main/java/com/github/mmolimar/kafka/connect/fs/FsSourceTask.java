@@ -3,7 +3,6 @@ package com.github.mmolimar.kafka.connect.fs;
 import com.github.mmolimar.kafka.connect.fs.file.FileMetadata;
 import com.github.mmolimar.kafka.connect.fs.file.reader.FileReader;
 import com.github.mmolimar.kafka.connect.fs.guidewire.Manifest;
-import com.github.mmolimar.kafka.connect.fs.guidewire.ManifestPoller;
 import com.github.mmolimar.kafka.connect.fs.policy.Policy;
 import com.github.mmolimar.kafka.connect.fs.policy.PolicyUtil;
 import com.github.mmolimar.kafka.connect.fs.util.ReflectionUtils;
@@ -36,8 +35,6 @@ public class FsSourceTask extends SourceTask {
     private FsSourceTaskConfig config;
     private Policy policy;
     private int pollInterval;
-
-    private ManifestPoller manifestPoller;
 
     public FsSourceTask() {
         this.stop = new AtomicBoolean(false);
@@ -74,31 +71,6 @@ public class FsSourceTask extends SourceTask {
             throw new ConnectException("A problem has occurred reading configuration: " + e.getMessage(), e);
         }
         log.info("FS source task started with policy [{}].", policy.getClass().getName());
-
-        // Setup and start manifest poller for Guidewire
-        boolean enabled = config.getBoolean(FsSourceTaskConfig.MANIFEST_POLL_ENABLED);
-        log.info("Guidewire Manifest poller enabled {}", enabled);
-        if (enabled) {
-
-            log.info("Starting Guidewire Manifest poller...");
-            try {
-
-                String uri = config.getFsUris().get(0);
-                if (uri.endsWith("/")) {
-                    uri = uri.substring(0, uri.length() - 1);
-                }
-                uri = uri.substring(0, uri.lastIndexOf("/"));
-                FileSystem fs = PolicyUtil.getFileSystem(uri, PolicyUtil.getPolicyConfigs(config));
-
-                List<String> topicNames = new ArrayList<>();
-                topicNames.add(config.getTopic());
-                int manifestPollInterval = config.getInt(FsSourceTaskConfig.MANIFEST_POLL_INTERVAL_MS);
-                this.manifestPoller = new ManifestPoller(fs, topicNames, manifestPollInterval);
-
-            } catch (IOException e) {
-                log.error("Error creating manifest poller", e);
-            }
-        }
     }
 
     @Override
@@ -108,24 +80,16 @@ public class FsSourceTask extends SourceTask {
 
             log.trace("Polling for new data...");
 
-            // get Guidewire manifest to check that timestamp folders have been committed before returning
-            // them in the poll() method
-            final Manifest manifest = this.manifestPoller != null ? this.manifestPoller.getManifest() : null;
-            if (manifest != null) {
-                while (!manifest.isReady(10000)) {
-                    log.debug("Waiting for Guidewire Manifest to be loaded");
-                }
-            }
-
             List<SourceRecord> totalRecords = filesToProcess().map(metadata -> {
 
-                log.debug("Checking file against Guidewire manifest{}.", metadata.getPath());
+                log.debug("Checking file against Guidewire manifest {}.", metadata.getPath());
                 String path = metadata.getPath();
                 path = path.substring(0, path.lastIndexOf("/"));
-                String timestampFolder = path.substring(path.lastIndexOf("/"));
+                String timestampFolder = path.substring(path.lastIndexOf("/") + 1);
 
                 List<SourceRecord> records = new ArrayList<>();
                 log.debug("Verifying topic {} and timestamp {} are committed according to Guidewire manifest.", this.config.getTopic(), timestampFolder);
+                Manifest manifest = getManifest();
                 if (manifest == null || manifest.committed(this.config.getTopic(), Long.parseLong(timestampFolder))) {
 
                     try (FileReader reader = policy.offer(metadata, context.offsetStorageReader())) {
@@ -140,7 +104,7 @@ public class FsSourceTask extends SourceTask {
                     log.debug("Read [{}] records from file [{}].", records.size(), metadata.getPath());
 
                 } else {
-                    log.debug("File not committed according to Guidewire manifest{}.", metadata.getPath());
+                    log.debug("File not committed according to Guidewire manifest {}.", metadata.getPath());
                 }
                 return records;
 
@@ -200,10 +164,26 @@ public class FsSourceTask extends SourceTask {
                 }
             }
         }
+    }
 
-        log.info("Stopping Guidewire Manifest poller...");
-        if (this.manifestPoller != null) {
-            this.manifestPoller.close();
+    private Manifest getManifest() {
+        boolean enabled = config.getBoolean(FsSourceTaskConfig.MANIFEST_POLL_ENABLED);
+        if (enabled) {
+            String uri = config.getFsUris().get(0);
+            if (uri.endsWith("/")) {
+                uri = uri.substring(0, uri.length() - 1);
+            }
+            uri = uri.substring(0, uri.lastIndexOf("/") + 1);
+
+            List<String> topicNames = new ArrayList<>();
+            topicNames.add(config.getTopic());
+            try {
+                FileSystem fs = PolicyUtil.getFileSystem(uri, PolicyUtil.getPolicyConfigs(config));
+                return new Manifest(fs, topicNames);
+            } catch (IOException e) {
+                log.error("Error retrieving Guidewire manifest for verifying file commit status", e);
+            }
         }
+        return null;
     }
 }
